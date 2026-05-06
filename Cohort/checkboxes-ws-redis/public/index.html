@@ -27,22 +27,27 @@
             }
         })
 
-        new Array(CHECKBOXES_SIZE).fill(null).forEach((_,index)=>{
-            const checkbox = document.createElement('input')
-            checkbox.type = 'checkbox'
-            checkbox.id = `checkbox-${index}`
+        window.addEventListener('load',async() => {
+            const response = await fetch('/checkboxes', {method:"GET"})
+            const data = await response.json()
+            if(data && data.checkboxes){
+                    data.checkboxes.forEach((serverVal,index)=>{
+                        const checkbox = document.createElement('input')
+                        checkbox.type = 'checkbox'
+                        checkbox.id = `checkbox-${index}`
+                        checkbox.checked = serverVal
 
-            //also we will add eventlistener on this 
-            checkbox.addEventListener('change',(event)=>{
-                const checked = event.target.checked
-                console.log(`Checkbox change:`,{index,checked})
-                //so when ever checkbox is checked 
-                //from frontend we will send that this checkbox is checked
-                socket.emit('client:checkbox-change',{index,checked})
-            })
-
-
-            document.getElementById('container').appendChild(checkbox)
+                     //also we will add eventlistener on this 
+                    checkbox.addEventListener('change',(event)=>{
+                        const checked = event.target.checked
+                        console.log(`Checkbox change:`,{index,checked})
+                        //so when ever checkbox is checked 
+                        //from frontend we will send that this checkbox is checked
+                        socket.emit('client:checkbox-change',{index,checked})
+                    })
+                    container.appendChild(checkbox)
+                })
+            }
         })
     </script>
 </body>

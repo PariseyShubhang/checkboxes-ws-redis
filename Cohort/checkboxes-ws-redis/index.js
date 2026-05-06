@@ -4,6 +4,12 @@ import { Server } from 'socket.io'
 import express from 'express'
 
 
+const CHECKBOX_SIZE = 100
+const state = {
+    CHECKBOXES : new Array(CHECKBOX_SIZE).fill(false)
+}
+
+
 async function main() {
 
     const app = express()
@@ -21,6 +27,8 @@ async function main() {
         //handle the (client:checkbox-change) here
         socket.on(`client:checkbox-change`,(data)=>{
             console.log(`[Socket:${socket.id}],client:checkbox-change`,data)
+            const {index, checked} = data
+            state.CHECKBOXES[index] = checked
             io.emit('client:checkbox-change',data)
         })
     })
@@ -34,6 +42,9 @@ async function main() {
         res.json({ healthy: true })
     )
 
+    app.get('/checkboxes',(req,res)=>{
+        return res.json({checkboxes:state.CHECKBOXES})
+    })
 
     server.listen(PORT, () => {
         console.log(`Server listening on http://localhost:${PORT}`)
