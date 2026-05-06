@@ -5,11 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>1 Million Checkboxes</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+    </style>
 </head>
 
 <body>
     <h1>CHECKBOXES</h1>
     <p class="subtitle">Interactive Checkbox Grid with Real-time Sync</p>
+    <div id="toast-container"></div>
     <div id="container"></div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -17,17 +40,51 @@
         const CHECKBOXES_SIZE = 100
 
 
+
+        function showToast(message) {
+            const container = document.getElementById('toast-container')
+            const toast = document.createElement('div')
+            toast.textContent = message
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: #ff4d4d;
+                color: #fff;
+                padding: 12px 20px;
+                border-radius: 6px;
+                font-weight: bold;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                animation: slideIn 0.3s ease-out;
+                z-index: 9999;
+            `
+            container.appendChild(toast)
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease-out'
+                setTimeout(() => toast.remove(), 300)
+            }, 3000)
+        }
+
+        socket.on('server:error', (data)=>{
+            showToast(`Error: ${data.error}`)
+        })
+
         //io.emit() server emitted to all so we have to handle in frontend and update
-        socket.on('client:checkbox-change',(data)=>{
+        socket.on('server:checkbox-change',(data)=>{
             //lets update
             const {index,checked} = data
-            const input = document.getElementById(`checkbox-${index}`)
-            if(input){
-                input.checked = checked
+            const checkbox = document.getElementById(`checkbox-${index}`)
+            if(checkbox){
+                checkbox.checked = checked
             }
         })
 
-        window.addEventListener('load',async() => {
+        async function fetchStateFromServer(){
+            
+            while(container.firstChild){
+                container.removeChild(container.firstChild)
+            }
+            
             const response = await fetch('/checkboxes', {method:"GET"})
             const data = await response.json()
             if(data && data.checkboxes){
@@ -44,10 +101,15 @@
                         //so when ever checkbox is checked 
                         //from frontend we will send that this checkbox is checked
                         socket.emit('client:checkbox-change',{index,checked})
+                        fetchStateFromServer()
                     })
                     container.appendChild(checkbox)
                 })
             }
+        }
+
+        window.addEventListener('load',async() => {
+            fetchStateFromServer()
         })
     </script>
 </body>
